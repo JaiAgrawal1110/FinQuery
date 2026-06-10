@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+
+# Data
+backend/chroma_db/
+backend/uploads/
+*.pdf
+
+# Node
+node_modules/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
