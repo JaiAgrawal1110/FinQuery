@@ -2,7 +2,7 @@ import os
 import uuid
 from pathlib import Path
 import pypdf
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.config import settings
 
 
