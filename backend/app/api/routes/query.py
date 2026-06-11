@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services.vector_store import vector_store
 from app.services.llm_service import answer_question
+from groq import Groq
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -56,3 +58,53 @@ def clear_session(session_id: str):
     if session_id in conversation_sessions:
         del conversation_sessions[session_id]
     return {"message": f"Session {session_id} cleared"}
+
+class CompareRequest(BaseModel):
+    question: str
+    document_ids: list[str]
+    session_id: str | None = None
+
+
+@router.post("/compare")
+def compare_documents(request: CompareRequest):
+    if len(request.document_ids) < 2:
+        return {"error": "Please provide at least 2 document IDs to compare"}
+
+    individual_answers = {}
+
+    for doc_id in request.document_ids:
+        # Force filter by each document individually
+        chunks = vector_store.search(
+            request.question, 
+            top_k=3,
+            filters={"document_id": doc_id}
+        )
+        if chunks:
+            doc_name = chunks[0]["metadata"]["document_name"]
+            result = answer_question(request.question, chunks)
+            individual_answers[doc_name] = result["answer"]
+        else:
+            individual_answers[doc_id] = "No relevant information found."
+
+    # Build comparison summary
+    comparison_prompt = f"Question: {request.question}\n\nAnswers from different companies:\n\n"
+    for doc_name, answer in individual_answers.items():
+        comparison_prompt += f"**{doc_name}:**\n{answer}\n\n"
+        comparison_prompt += """Now provide a SHORT structured comparison. 
+                                Max 5 bullet points per category. 
+                                Only include what's available in both companies.
+                                Be concise - no repetition, no filler text."""
+
+    
+    client = Groq(api_key=settings.GROQ_API_KEY)
+    response = client.chat.completions.create(
+        model=settings.GROQ_MODEL,
+        messages=[{"role": "user", "content": comparison_prompt}],
+        temperature=0.1,
+        max_tokens=1024
+    )
+
+    return {
+        "comparison": response.choices[0].message.content,
+        "individual_answers": individual_answers
+    }
