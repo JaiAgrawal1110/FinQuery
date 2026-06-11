@@ -6,13 +6,36 @@ client = Groq(api_key=settings.GROQ_API_KEY)
 
 
 def build_context(chunks: list[dict]) -> str:
-    context_parts = []
+    seen = set()
+    unique_chunks = []
     for chunk in chunks:
+        key = (chunk["metadata"]["page_number"], chunk["metadata"]["document_name"])
+        if key not in seen:
+            seen.add(key)
+            unique_chunks.append(chunk)
+
+    context_parts = []
+    for chunk in unique_chunks:
         meta = chunk["metadata"]
         context_parts.append(
             f"[Source: {meta['document_name']}, Page {meta['page_number']}]\n{chunk['text']}"
         )
-    return "\n\n---\n\n".join(context_parts)
+    return "\n---\n".join(context_parts)
+
+
+def deduplicate_sources(chunks: list[dict]) -> list[dict]:
+    seen = set()
+    unique = []
+    for chunk in chunks:
+        key = (chunk["metadata"]["document_name"], chunk["metadata"]["page_number"])
+        if key not in seen:
+            seen.add(key)
+            unique.append({
+                "document": chunk["metadata"]["document_name"],
+                "page": chunk["metadata"]["page_number"],
+                "score": round(chunk["score"], 3)
+            })
+    return unique
 
 
 def answer_question(question: str, chunks: list[dict], conversation_history: list = None) -> dict:
@@ -29,12 +52,10 @@ def answer_question(question: str, chunks: list[dict], conversation_history: lis
     )
 
     answer = response.choices[0].message.content
-    sources = [
-        {
-            "document": c["metadata"]["document_name"],
-            "page": c["metadata"]["page_number"],
-            "score": round(c["score"], 3)
-        }
-        for c in chunks
-    ]
-    return {"answer": answer, "sources": sources, "tokens_used": response.usage.total_tokens}
+    sources = deduplicate_sources(chunks)
+
+    return {
+        "answer": answer,
+        "sources": sources,
+        "tokens_used": response.usage.total_tokens
+    }
