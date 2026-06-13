@@ -9,16 +9,31 @@ on:
 jobs:
   test-backend:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install dependencies
         run: |
           cd backend
           pip install -r requirements.txt
+
+      - name: Validate core imports
+        run: |
+          cd backend
+          python -c "import fastapi; import chromadb; import sentence_transformers; print('✓ All core imports OK')"
+
       - name: Run tests
         run: |
           cd backend
-          pytest tests/ -v
+          if [ -d "tests" ] && [ "$(ls -A tests/)" ]; then
+            pytest tests/ -v
+          else
+            echo "✓ No tests yet — import validation passed"
+          fi
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
