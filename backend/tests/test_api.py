@@ -12,4 +12,4 @@ def test_health():
 def test_list_documents():
     response = client.get("/api/v1/documents/")
     assert response.status_code == 200
-    assert "document_ids" in response.json()
+    assert 'documents' in response.json()
