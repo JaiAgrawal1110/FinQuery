@@ -10,6 +10,7 @@ services:
     volumes:
       - ./backend/chroma_db:/app/chroma_db
       - ./backend/uploads:/app/uploads
+      - ./backend/document_registry.json:/app/document_registry.json
     depends_on:
       - postgres
 

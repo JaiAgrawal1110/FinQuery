@@ -60,6 +60,19 @@ FastAPI Backend  (Python 3.11)
 
 ---
 
+## Screenshots
+
+### Q&A with Source Citations
+![Q&A with citations](Screenshots/qa_citations.png)
+
+### Multi-Document Comparison
+![Multi-document comparison](Screenshots/compare_mode.png)
+
+### API Documentation
+![FastAPI docs](Screenshots/api_docs.png)
+
+---
+
 ## Tech Stack — and Why
 
 | Layer | Choice | Reasoning |
