@@ -11,6 +11,14 @@
 > **Imagine** you need to compare Microsoft's and Deloitte's annual reports — 200+ pages combined. Without FinQuery, you're manually scanning and losing context. With FinQuery, you type *"What are the key revenue drivers?"* and get a cited answer in under 4 seconds, pinpointed to the exact filename and page: `📄 microsoft_annual.pdf · p.4`
 
 ---
+## 🚀 Live Demo
+
+**Backend API (Live on AWS):** [http://3.25.163.61:8000/docs](http://3.25.163.61:8000/docs)
+
+The FastAPI backend is deployed on AWS EC2 using Docker, with persistent 
+document storage and auto-restart configured. Explore the interactive 
+Swagger UI to test document upload, Q&A, and multi-document comparison 
+endpoints directly.
 
 ## What's Built
 
