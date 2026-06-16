@@ -21,7 +21,7 @@ export default function Home() {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/v1/documents/");
+      const res = await fetch("http://3.25.163.61:8000/api/v1/documents/");
       const data = await res.json();
       setDocuments(data.documents || []);
     } catch {}
@@ -33,7 +33,7 @@ export default function Home() {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    await fetch("http://localhost:8000/api/v1/documents/upload", { method: "POST", body: formData });
+    await fetch("http://3.25.163.61:8000/api/v1/documents/upload", { method: "POST", body: formData });
     await fetchDocuments();
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -53,7 +53,7 @@ export default function Home() {
       let data;
 
       if (isCompare && documents.length >= 2) {
-        const res = await fetch("http://localhost:8000/api/v1/query/compare", {
+        const res = await fetch("http://3.25.163.61:8000/api/v1/query/compare", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
