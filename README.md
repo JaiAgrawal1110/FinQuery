@@ -11,13 +11,14 @@
 > **Imagine** you need to compare Microsoft's and Deloitte's annual reports — 200+ pages combined. Without FinQuery, you're manually scanning and losing context. With FinQuery, you type *"What are the key revenue drivers?"* and get a cited answer in under 4 seconds, pinpointed to the exact filename and page: `📄 microsoft_annual.pdf · p.4`
 
 ---
+
 ## 🚀 Live Demo
 
 **Backend API (Live on AWS):** [http://3.25.163.61:8000/docs](http://3.25.163.61:8000/docs)
 
-The FastAPI backend is deployed on AWS EC2 using Docker, with persistent 
-document storage and auto-restart configured. Explore the interactive 
-Swagger UI to test document upload, Q&A, and multi-document comparison 
+The FastAPI backend is deployed on AWS EC2 using Docker, with persistent
+document storage and auto-restart configured. Explore the interactive
+Swagger UI to test document upload, Q&A, and multi-document comparison
 endpoints directly.
 
 ## What's Built
@@ -27,7 +28,8 @@ endpoints directly.
 - **Multi-document comparison** — Same query runs against each document independently with explicit `doc_id` filtering; LLM synthesises a structured comparison — no cross-document retrieval bleed
 - **Conversation memory** — Follow-up questions carry prior context; session cleared via `DELETE /session`
 - **Document library** — Upload, list, and delete filings; persistent JSON registry maps filenames to ChromaDB IDs across restarts
-- **Dockerized** — Backend containerised and running; full compose (backend + Next.js + PostgreSQL) defined
+- **Dockerized + deployed** — Backend containerised and running live on AWS EC2; full compose (backend + Next.js + PostgreSQL) defined for local multi-service dev
+- **CI/CD pipeline** — GitHub Actions runs tests on every push, then automatically deploys to AWS on merge to `main`
 
 ---
 
@@ -68,6 +70,17 @@ FastAPI Backend  (Python 3.11)
 
 ---
 
+## CI/CD
+
+GitHub Actions pipeline runs on every push to `main`:
+
+1. **CI** — runs the pytest suite against the FastAPI backend
+2. **CD** — SSHs into the AWS EC2 instance, pulls the latest code, rebuilds the Docker image, and restarts the container with `--restart unless-stopped`
+
+No manual deployment steps required after merging — the live demo link always reflects the latest code on `main`.
+
+---
+
 ## Screenshots
 
 ### Q&A with Source Citations
@@ -90,8 +103,9 @@ FastAPI Backend  (Python 3.11)
 | Embeddings | all-MiniLM-L6-v2 | Runs locally — no embedding API cost, no per-token billing, fast enough at our document scale |
 | Backend | FastAPI | Async I/O fits the embedding + LLM call pattern; auto-generates OpenAPI docs at `/docs` |
 | Frontend | Next.js · Tailwind | SSR where needed, fast iteration on UI components |
-| Database | PostgreSQL | Document metadata, user sessions, upload history |
-| Infra | Docker + AWS EC2 + Nginx | Single-command local dev; Nginx as reverse proxy in front of FastAPI on EC2 |
+| Database | PostgreSQL *(planned)* | Defined in `docker-compose.yml` for document metadata, user sessions, and upload history — not yet wired into the application logic |
+| Infra | Docker + AWS EC2 | Single-command local dev; backend runs as a Docker container on EC2 with swap space configured to handle memory-intensive embedding workloads on a t3.micro instance |
+| CI/CD | GitHub Actions | Automated testing on every push; automated SSH deploy to EC2 on merge to `main` |
 
 ---
 
@@ -117,6 +131,8 @@ Every PDF upload generated a new UUID, so after a server restart ChromaDB still 
 
 **Fix:** built a persistent JSON registry (filename → document ID) that loads on startup. Any re-upload of an existing file returns the existing ID rather than creating a duplicate. The compare endpoint also required an explicit `where={"doc_id": id}` filter per document — without it, ChromaDB's semantic search retrieves the global top-5 chunks and silently ignores whichever document matched less strongly, making the comparison feature meaningless.
 
+A related issue surfaced during AWS deployment: the EC2 t3.micro instance's 1GB RAM was insufficient to run the embedding model, ChromaDB, and FastAPI simultaneously, causing the Docker container to be OOM-killed (`exit code 137`). Fixed by provisioning a 2GB swap file rather than upgrading the instance tier.
+
 ---
 
 ## Quick Start
@@ -131,6 +147,14 @@ cp .env.example .env            # Add your GROQ_API_KEY
 uvicorn app.main:app --reload   # Docs at http://localhost:8000/docs
 ```
 
+### Frontend (runs locally, connects to live AWS backend)
+
+```bash
+cd FinQuery/frontend
+npm install
+npm run dev   # http://localhost:3000
+```
+
 ### Docker
 
 ```bash
@@ -142,9 +166,11 @@ docker run -p 8000:8000 --env-file .env finquery-backend
 
 ## What's Next
 
-- **AWS EC2 deployment** — Nginx reverse proxy in front of FastAPI (in progress)
-- **Hybrid search** — BM25 + vector retrieval via LangChain EnsembleRetriever; improves recall on keyword-heavy financial queries
+- **Hybrid search** — BM25 + vector retrieval via LangChain `EnsembleRetriever`; improves recall on keyword-heavy financial queries
 - **RAG evaluation** — RAGAS pipeline scoring faithfulness, answer relevance, and context precision on a fixed question set
+- **SEC EDGAR auto-fetch** — type a company name and year, automatically pull and index the filing
+- **Nginx reverse proxy** — front the FastAPI container on EC2 for cleaner URLs and TLS termination
+- **PostgreSQL integration** — wire up document metadata and session persistence beyond the current JSON registry
 
 ---
 
