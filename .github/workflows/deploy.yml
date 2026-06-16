@@ -1,0 +1,23 @@
+name: Deploy to AWS
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/FinQuery
+            git pull origin main
+            docker stop finquery || true
+            docker rm finquery || true
+            docker build -t finquery-backend ./backend
+            docker run -d -p 8000:8000 --env-file ./backend/.env -v $(pwd)/backend/chroma_db:/app/chroma_db -v $(pwd)/backend/uploads:/app/uploads --name finquery --restart unless-stopped finquery-backend
+            echo "Deployment complete!"
