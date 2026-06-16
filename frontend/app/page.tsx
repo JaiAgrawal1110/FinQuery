@@ -64,7 +64,7 @@ export default function Home() {
         const raw = await res.json();
         data = { answer: raw.comparison, sources: [] };
       } else {
-        const res = await fetch("http://localhost:8000/api/v1/query/ask", {
+        const res = await fetch("http://3.25.163.61:8000/api/v1/query/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
