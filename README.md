@@ -12,10 +12,6 @@
 
 ---
 
-## 🚀 Live Demo
-
-**Backend API (Live on AWS):** [http://3.25.163.61:8000/docs](http://3.25.163.61:8000/docs)
-
 The FastAPI backend is deployed on AWS EC2 using Docker, with persistent
 document storage and auto-restart configured. Explore the interactive
 Swagger UI to test document upload, Q&A, and multi-document comparison
